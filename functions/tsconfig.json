@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "es2020",
+    "moduleResolution": "node16",
+    "outDir": "lib",
+    "baseUrl": "./src",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "sourceMap": true,
+    "types": ["node", "firebase-functions"]
+  },
+  "compileOnSave": true,
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "lib"]
+}
