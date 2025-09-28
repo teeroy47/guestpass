@@ -20,40 +20,42 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
 const functions = getFunctions(app);
-export const callCreateInvite = httpsCallable<
-  {
-    guest: {
-      name: string;
-      email: string;
-      phone?: string;
-      notes?: string;
-    };
-    event?: {
-      id?: string;
-      name?: string;
-      date?: string;
-      location?: string;
-    };
-    plusOnes?: number;
-  },
-  {
-    guestId: string;
-    inviteCode: string;
-    accessCode: string;
-    qrUrl: string;
-    pdfUrl: string;
-    guest: {
-      name: string;
-      email: string;
-    };
-    event: {
-      id: string;
-      name: string;
-      date: string | null;
-      location: string | null;
-    };
-  }
->(functions, "createInvite");
+
+export type CreateInvitePayload = {
+  guest: {
+    name: string;
+    email: string;
+    phone?: string;
+    notes?: string;
+  };
+  event?: {
+    id?: string;
+    name?: string;
+    date?: string;
+    location?: string;
+  };
+  plusOnes?: number;
+};
+
+export type CreateInviteResult = {
+  guestId: string;
+  inviteCode: string;
+  accessCode: string;
+  qrUrl: string;
+  pdfUrl: string;
+  guest: {
+    name: string;
+    email: string;
+  };
+  event: {
+    id: string;
+    name: string;
+    date: string | null;
+    location: string | null;
+  };
+};
+
+export const callCreateInvite = httpsCallable<CreateInvitePayload, CreateInviteResult>(functions, "createInvite");
 
 export let analytics: Analytics | undefined;
 

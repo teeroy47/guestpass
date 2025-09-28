@@ -5,9 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, Download, Users } from 'lucide-react';
+import { Upload, Download, Users, Send, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Papa from 'papaparse';
+import { callCreateInvite, type CreateInvitePayload, type CreateInviteResult } from '@/lib/firebase';
+import { useMutation } from '@tanstack/react-query';
 
 interface Guest {
   id: string;
@@ -20,7 +22,36 @@ interface Guest {
 export default function UploadPage() {
   const [guests, setGuests] = useState<Guest[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [sendingInvites, setSendingInvites] = useState(false);
   const { toast } = useToast();
+
+  const inviteMutation = useMutation({
+    mutationFn: async (guest: Guest) => {
+      const payload: CreateInvitePayload = {
+        guest: {
+          name: guest.name,
+          email: guest.email,
+        },
+      };
+
+      const result = await callCreateInvite(payload);
+      return result.data as CreateInviteResult;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: 'Invite created',
+        description: `Sent invite to ${data.guest.name}`,
+      });
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : 'Unable to create invite. Please try again.';
+      toast({
+        title: 'Invite failed',
+        description: message,
+        variant: 'destructive',
+      });
+    },
+  });
 
   const handleFileUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -84,6 +115,42 @@ export default function UploadPage() {
       },
     });
   }, [toast]);
+
+  const handleCreateInvites = async () => {
+    if (guests.length === 0) {
+      toast({
+        title: 'No guests imported',
+        description: 'Upload a guest list before sending invites.',
+      });
+      return;
+    }
+
+    try {
+      setSendingInvites(true);
+
+      for (const guest of guests) {
+        // Await sequentially to keep load manageable and provide feedback per guest
+        // Errors are surfaced through the mutation's onError handler
+        // eslint-disable-next-line no-await-in-loop
+        await inviteMutation.mutateAsync(guest);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'At least one invite failed to send.';
+      toast({
+        title: 'Send failed',
+        description: message,
+        variant: 'destructive',
+      });
+      return;
+    } finally {
+      setSendingInvites(false);
+    }
+
+    toast({
+      title: 'Invites sent',
+      description: `Dispatched ${guests.length} invite${guests.length > 1 ? 's' : ''}.`,
+    });
+  };
 
   const downloadSampleCSV = () => {
     const sampleData = [
